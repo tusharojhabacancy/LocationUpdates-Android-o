@@ -2,6 +2,7 @@ package com.example.keerthiacharya.demolocationupdate.service;
 
 import android.app.ActivityManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -10,6 +11,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -200,18 +202,39 @@ public class LocationUpdatesService extends Service{
         PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
-        return new NotificationCompat.Builder(this)
-                .addAction(R.drawable.ic_launch, getString(R.string.launch_activity),
-                        activityPendingIntent)
-                .addAction(R.drawable.ic_cancel, getString(R.string.remove_location_updates),
-                        servicePendingIntent)
-                .setContentText(text)
-                .setContentTitle(mLocation.getLatitude()+"")
-                .setOngoing(true)
-                .setPriority(Notification.PRIORITY_HIGH)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setTicker(text)
-                .setWhen(System.currentTimeMillis()).build();
+        NotificationManager notificationManager =
+                (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Notification noti;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            String CHANNEL_ID = "dopplet_01";// The id of the channel.
+            CharSequence name = getString(R.string.app_name);// The user-visible name of the channel.
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+            mChannel.setSound(null, null);
+            notificationManager.createNotificationChannel(mChannel);
+            noti = new Notification.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("Location App")
+                    .setContentText(mLocation.getLatitude()+" "+mLocation.getLongitude())
+                    .build();
+            return noti;
+        } else {
+            return new NotificationCompat.Builder(this)
+                    .addAction(R.drawable.ic_launch, getString(R.string.launch_activity),
+                            activityPendingIntent)
+                    .addAction(R.drawable.ic_cancel, getString(R.string.remove_location_updates),
+                            servicePendingIntent)
+                    .setContentText(text)
+                    .setContentTitle(mLocation.getLatitude()+"")
+                    .setOngoing(true)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setTicker(text)
+                    .setWhen(System.currentTimeMillis()).build();
+        }
     }
 
     private void createLocationRequest() {
